@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<!-- Name:Yaning Yu -->
+<html>
+	<head>
+		<meta charset = "utf-8">
+		<meta name="viewport" content="initial-scale=1.0">			
+		<style>
+		html, body {
+			height: 100%;
+			margin: 0;
+			padding: 0;
+		}
+			#map {
+			height: 100%;
+			margin-top:0;
+		}
+    	</style>
+	</head>
+
+	<body>
+
+    <header class="header-search">
+        <div class="header-limiter">
+        <!-- <h1><a href="#">Twitt<span>Map</span></a></h1> -->
+            <select id="combo">
+                <option searchKeyword="1">love</option>
+                <option searchKeyword="2">Trump</option>
+                <option searchKeyword="3">Lufy</option>
+                <option searchKeyword="4">Like</option>
+                <option searchKeyword="5">Food</option>
+                <option searchKeyword="6">China</option>
+                <option searchKeyword="7">America</option>
+                <option searchKeyword="8">hate</option>
+                <option searchKeyword="9">Burger</option>
+                <option searchKeyword="10">Fries</option>
+            </select>
+            <input id="button1" type="button" value="click"/>
+        </div>
+    </header>
+		<div class="write">
+		</div>
+      
+		<div id="map"></div>
+		<script>
+        var marker2;
+		var infowindow2;
+		var socket = new WebSocket("ws://localhost:8080/");
+
+		socket.onmessage = function(event) {
+    		var rawJSON = JSON.parse(event.data);
+    		var lat = rawJSON.lat;
+    		var lng = rawJSON.lng;
+    		var div = document.getElementById("data");
+    		div.innerHTML = "lat:" + lat + ", lng:" + lng  + "<br/>" + div.innerHTML;
+    		if (lat && lng) {
+				var latlng = new google.maps.LatLng(lat, lng);
+        	marker = new google.maps.Marker({
+		    		position: latlng,
+		    		map: map});
+			}
+		}
+
+		function initMap() {
+			var myLatLng = {lat: 44.977276, lng: -93.232266};
+
+			var map = new google.maps.Map(document.getElementById('map'), {
+					zoom: 2,
+					center: myLatLng,
+					mapTypeId: google.maps.MapTypeId.ROADMAP
+
+			});
+			var geocoder = new google.maps.Geocoder(); // Create a geocoder object
+			document.getElementById('submit').addEventListener('click', function() {
+	          newgeocodeAddress(geocoder, map);
+	        });
+
+		}  
+
+	    function createMarker(twitter) {
+	        var latLng = new google.maps.LatLng(twitter.geo[1], twitter.geo[0]);
+	        var user = twitter.user;
+	        var time = twitter.time;
+	        var text = twitter.text;
+	        var marker = new google.maps.Marker({
+	            position: latLng,
+	            map: map
+	        });
+	        google.maps.event.addListener(marker, "click", function () {
+	            if (infowindow)infowindow.close();
+	            infowindow = new google.maps.InfoWindow({
+	                content: '<div id="bodyContent">' + '<a href="https://twitter.com/' + user + '">' + '<b>' + user + '</b></a>: '
+	                + text + '</p>' +
+	                '<p><b>' + time + '</b></p>' +
+	                '</div>'
+	            });
+	            infowindow.open(map, marker);
+	        });
+        	return marker;
+    	}
+
+    	function newgeocodeAddress(geocoder, resultsMap) {
+        	var address = document.getElementById('address').value;
+        	geocoder.geocode({'address': address}, function(results, status) {
+          	if (status === google.maps.GeocoderStatus.OK) {
+            	resultsMap.setCenter(results[0].geometry.location);
+            	var marker = new google.maps.Marker({
+              	map: resultsMap,
+              	position: results[0].geometry.location
+            	});
+          	} else {
+      			alert('Geocode was not successful for the following reason: ' + status);
+          	}
+    			});
+      	}
+
+
+	function geocodeAddress(geocoder, resultsMap, address, eventthing) {
+		
+ 		
+		geocoder.geocode({'address': address}, function(results, status) {
+			if (status === google.maps.GeocoderStatus.OK) {
+					resultsMap.setCenter(results[0].geometry.location);
+					marker2 = new google.maps.Marker({
+								map: resultsMap,
+								position: results[0].geometry.location,
+								title:address
+								});
+					infowindow2 = new google.maps.InfoWindow({
+								content: eventthing
+								});
+    
+					google.maps.event.addListener(marker2, 'click', createWindow(resultsMap,infowindow2, marker2));
+			} else {
+					alert('Geocode was not successful for the following reason: ' + status);
+			} 
+		}); 
+	} 	
+	function createWindow(rmap, rinfowindow, rmarker){
+              return function(){
+				rinfowindow.open(rmap, rmarker);
+            }
+    }
+
+
+       </script>
+       <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBBqOBVKmQGRPcocO0RzwMwZONdRuyAgWc&callback=initMap"
+       async defer></script>
+	
+	</body>
+</html>
+
+   <!-- source from https://developers.google.com/maps/documentation/javascript/examples/geocoding-simple -->
